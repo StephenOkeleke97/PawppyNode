@@ -7,3 +7,7 @@
 .env.development.local
 .env.test.local
 .env.production.local
+
+# jwt keys
+id_rsa_priv.pem
+id_rsa_pub.pem

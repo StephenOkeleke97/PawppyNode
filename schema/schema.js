@@ -25,11 +25,6 @@ const userSchema = new Schema({
             type: Number,
         }
     ],
-    forAdoption: [
-        {
-            type: Number,
-        }
-    ]
 });
 
 module.exports = {
