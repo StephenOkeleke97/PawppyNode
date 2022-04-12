@@ -21,17 +21,16 @@ const options = {
 };
 
 const strategy = new JWTStrategy(options, (payload, done) => {
-    User.findById(payload.sub)
-    .then(user => {
-        if (user) return done(null, user);
-        else return done(null, false);
+  User.findById(payload.sub)
+    .then((user) => {
+      if (user) return done(null, user);
+      else return done(null, false);
     })
-    .catch(err => {
-        return done(err, null);
+    .catch((err) => {
+      return done(err, null);
     });
 });
 
 module.exports = (passport) => {
-    passport.use(strategy);
-}
-
+  passport.use(strategy);
+};

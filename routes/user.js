@@ -89,7 +89,7 @@ function CheckIfEmailUnique(req, res, next) {
     if (err) console.log(err);
     else if (result)
       res.status(400).send({
-        message: "There is an account associated with this email",
+        message: "There is already an account associated with this email",
         success: false,
       });
     else next();
@@ -158,7 +158,7 @@ router.post(
         delete u.password;
         delete u.salt;
 
-        const jwt = issueJWT();
+        const jwt = issueJWT(u);
 
         res.cookie("jwt", jwt.token, {
           maxAge: 3600000 * 24,

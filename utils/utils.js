@@ -24,11 +24,11 @@ function validPassword(password, salt, hash) {
 
 function issueJWT(user) {
   const _id = user._id;
-  const expiresIn = Date.now() + 3600000 * 24;
+  const expiresIn = (3600000 * 24).toString();
 
   const payload = {
     sub: _id,
-    iat: Date.now(),
+    iat: Math.floor(Date.now() / 1000),
   };
 
   const signedToken = jsonwebtoken.sign(payload, process.env.id_rsa_priv, {
