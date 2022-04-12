@@ -26,7 +26,7 @@ function validateToken(req, res, next) {
     if (!result || Date.now() > dateTime) {
       refreshToken(res, next);
     } else {
-      next();
+      next();//
     }
   });
 }
