@@ -5,21 +5,25 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const { getPets, requestToken } = require("../petfinder/petfinderService");
+const {
+  getPets,
+  requestToken,
+  getTypes,
+} = require("../petfinder/petfinderService");
 
 /**
  * Checks if a valid token exists in database.
- * If a token does not exist or is expired, request 
+ * If a token does not exist or is expired, request
  * for a new token.
- * 
+ *
  * @param {*} req request object
  * @param {*} res response object
  * @param {*} next next function
  */
 function validateToken(req, res, next) {
   Token.findOne({ name: "jwt" }).then((result) => {
-    const date = new Date();
-    if (!result || date > Date.parse(result.expires)) {
+    const dateTime = Number(result.expires);
+    if (!result || Date.now() > dateTime) {
       refreshToken(res, next);
     } else {
       next();
@@ -30,12 +34,11 @@ function validateToken(req, res, next) {
 /**
  * Request for a new access token from petfinder
  * and store token in database.
- * 
+ *
  * @param {*} res response object
  * @param {*} next next function
  */
 function refreshToken(res, next) {
-
   const id = process.env.PF_API_KEY;
   const secret = process.env.PF_SECRET;
 
@@ -55,7 +58,9 @@ function refreshToken(res, next) {
         } else {
           tokenFromDB.token = result.data.access_token;
           tokenFromDB.expires = (
-            result.data.expires_in + Date.now() - 240
+            result.data.expires_in +
+            Date.now() -
+            240
           ).toString();
           tokenFromDB.save((error) => {
             if (error) console.log(error);
@@ -72,7 +77,7 @@ function refreshToken(res, next) {
 
 /**
  * Send 500 error to client.
- * 
+ *
  * @param {*} res response object
  */
 function serverError(res) {
@@ -83,16 +88,28 @@ function serverError(res) {
 
 router.get("/pets", [validateToken], function (req, res) {
   getPets()
-    .then((result) => {
+    .then((response) => {
       res.send({
         message: "success",
-        data: result.data,
+        data: response.data,
       });
     })
     .catch((error) => {
-        console.log(error);
+      console.log(error);
       serverError(res);
     });
+});
+
+router.get("/types", [validateToken], function (req, res) {
+  getTypes().then(response => {
+    res.send({
+        message: "success",
+        data: response.data
+    });
+  }).catch(error => {
+      console.log(error);
+      serverError(res);
+  })
 });
 
 module.exports = router;
