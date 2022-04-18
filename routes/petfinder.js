@@ -9,6 +9,8 @@ const {
   getPets,
   requestToken,
   getTypes,
+  getBreed,
+  getOrganizations,
 } = require("../petfinder/petfinderService");
 
 /**
@@ -26,7 +28,7 @@ function validateToken(req, res, next) {
     if (!result || Date.now() > dateTime) {
       refreshToken(res, next);
     } else {
-      next();//
+      next();
     }
   });
 }
@@ -49,7 +51,7 @@ function refreshToken(res, next) {
           const token = new Token({
             name: "jwt",
             token: result.data.access_token,
-            expires: (result.data.expires_in + Date.now() - 240).toString(),
+            expires: (result.data.expires_in * 1000 + Date.now() - 240).toString(),
           });
           token.save((error) => {
             if (error) console.log(error);
@@ -58,7 +60,7 @@ function refreshToken(res, next) {
         } else {
           tokenFromDB.token = result.data.access_token;
           tokenFromDB.expires = (
-            result.data.expires_in +
+            result.data.expires_in * 1000 +
             Date.now() -
             240
           ).toString();
@@ -86,30 +88,83 @@ function serverError(res) {
   });
 }
 
-router.get("/pets", [validateToken], function (req, res) {
-  getPets()
+router.use(validateToken, function (req, res, next) {
+    next();
+});
+
+router.get("/animals", function (req, res) {
+  const params = {
+    type: req.query.type,
+    breed: req.query.breed,
+    size: req.query.size,
+    gender: req.query.gender,
+    age: req.query.age,
+    color: req.query.color,
+    coat: req.query.coat,
+    status: req.query.status,
+    organization: req.query.organization,
+    good_with_children: req.query["good_with_children"],
+    good_with_cats: req.query["good_with_cats"],
+    good_with_dogs: req.query["good_with_dogs"],
+    house_trained: req.query["house_trained"],
+    declawed: req.query["declawed"],
+    special_needs: req.query["special_needs"],
+    page: req.query.page,
+    limit: req.query.limit
+    // location: req.query.location,
+    // distance: req.query.distance,
+  }
+  console.log(params);
+
+  getPets(params)
     .then((response) => {
+      console.log(response);
       res.send({
         message: "success",
         data: response.data,
       });
     })
     .catch((error) => {
-      console.log(error);
+      console.log(error.response);
       serverError(res);
     });
 });
 
-router.get("/types", [validateToken], function (req, res) {
+router.get("/types", function (req, res) {
   getTypes().then(response => {
     res.send({
         message: "success",
-        data: response.data
+        types: response.data.types
     });
   }).catch(error => {
       console.log(error);
       serverError(res);
-  })
+  });
 });
+
+router.get("/breed", function (req, res) {
+    const type = req.query.type;
+    getBreed(type).then(response => {
+        res.send({
+            message: "Success",
+            breeds: response.data.breeds
+        });
+    }).catch(error => {
+        console.log(error);
+        serverError(res);
+    });
+});
+
+router.get("/organizations", function (req, res) {
+  getOrganizations().then(response => {
+    res.send({
+      message: "Success",
+      organizations: response.data.organizations
+    });
+  }).catch(error => {
+    console.log(error);
+    serverError(res);
+  });
+})
 
 module.exports = router;

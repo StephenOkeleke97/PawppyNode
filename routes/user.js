@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const router = express.Router();
 const { User } = require("../schema/schema");
 const { validPassword, generatePassword, issueJWT } = require("../utils/utils");
+const passport = require("passport");
 
 dotenv.config();
 
@@ -18,12 +19,21 @@ function validatePassword(password) {
   return regex.test(password);
 }
 
-function checkEmailAndPasswordNotUndefined(req, res, next) {
+function validatePhoneNumber(number) {
+  return number.trim().length >= 8;
+}
+
+function requiredParamsPresent(req, res, next) {
   const email = req.body.email;
   const password = req.body.password;
+  const firstName = req.body.firstName;
+  const lastName = req.body.lastName;
+  const phoneNumber = req.body.phoneNumber;
 
-  if (!email || !password) {
-    const message = "Email and password are required";
+  if (!email || !password || !firstName || !lastName || !phoneNumber) {
+    const message =
+      "The following parameters are required: Email, password, " +
+      "first name, last name and phonenumber";
     sendResponse(res, 400, message, false);
   } else {
     next();
@@ -82,6 +92,17 @@ function checkValidPassword(req, res, next) {
   }
 }
 
+function checkValidPhonenumber(req, res, next) {
+  const phoneNumber = req.body.phoneNumber.trim();
+
+  if (!validatePhoneNumber(phoneNumber)) {
+    const message = "Phone number must be at least 8 digits long.";
+    sendResponse(res, 400, message, false);
+  } else {
+    next();
+  }
+}
+
 function CheckIfEmailUnique(req, res, next) {
   const email = req.body.email.trim();
 
@@ -98,7 +119,7 @@ function CheckIfEmailUnique(req, res, next) {
 
 router.post(
   "/login",
-  [checkEmailAndPasswordNotUndefined, checkValidEmail, checkValidCredentials],
+  [requiredParamsPresent, checkValidEmail, checkValidCredentials],
   (req, res) => {
     const email = req.body.email.trim();
     User.findOne({ email: email })
@@ -113,7 +134,7 @@ router.post(
         res.cookie("jwt", jwt.token, {
           maxAge: 3600000 * 24,
           httpOnly: true,
-          secure: process.env.NODE_ENV !== "Development"
+          secure: process.env.NODE_ENV !== "Development",
         });
 
         res.status(200).send({
@@ -133,20 +154,27 @@ router.post(
 router.post(
   "/register",
   [
-    checkEmailAndPasswordNotUndefined,
+    requiredParamsPresent,
     checkValidEmail,
     checkValidPassword,
+    checkValidPhonenumber,
     CheckIfEmailUnique,
   ],
   (req, res) => {
     const email = req.body.email.trim();
     const password = req.body.password;
+    const firstName = req.body.firstName.trim();
+    const lastName = req.body.lastName.trim();
+    const phoneNumber = req.body.phoneNumber.trim();
 
     const saltHash = generatePassword(password);
     const user = new User({
       email: email,
       password: saltHash.hash,
       salt: saltHash.salt,
+      firstName: firstName,
+      lastName: lastName,
+      phoneNumber: phoneNumber,
     });
     user.save((err, user) => {
       if (err) {
@@ -163,7 +191,7 @@ router.post(
         res.cookie("jwt", jwt.token, {
           maxAge: 3600000 * 24,
           httpOnly: true,
-          secure: process.env.NODE_ENV !== "Development"
+          secure: process.env.NODE_ENV !== "Development",
         });
 
         res.status(200).send({
@@ -177,6 +205,115 @@ router.post(
   }
 );
 
-router.post("/signout", (req, res) => {});
+router.post("/logout", (req, res) => {
+  res.clearCookie("jwt");
+
+  res.send({
+    message: "Success",
+    success: true,
+  });
+});
+
+router.put(
+  "/update/name",
+  passport.authenticate("jwt", { session: false }),
+  (res, req) => {
+    const user = req.user;
+    const firstName = req.body.firstName;
+    const lastName = req.body.lastName;
+    user.firstName = firstName;
+    user.lastName = lastName;
+    user
+      .save()
+      .then((user) => {
+        const u = { ...user.toObject() };
+        delete u.password;
+        delete u.salt;
+
+        res.send({
+          message: "Success",
+          user: u,
+          success: true,
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+        res.status(500).send({
+          message: "Something went wrong. Please try again later",
+          success: false,
+        });
+      });
+  }
+);
+
+router.put(
+  "/update/phonenumber",
+  passport.authenticate("jwt", { session: false }),
+  (res, req) => {
+    const user = req.user;
+    const phoneNumber = req.body.phoneNumber;
+    user.phoneNumber = phoneNumber;
+    user
+      .save()
+      .then((user) => {
+        const u = { ...user.toObject() };
+        delete u.password;
+        delete u.salt;
+
+        res.send({
+          message: "Success",
+          user: u,
+          success: true,
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+        res.status(500).send({
+          message: "Something went wrong. Please try again later",
+          success: false,
+        });
+      });
+  }
+);
+
+router.put(
+  "/update/password",
+  checkValidCredentials,
+  passport.authenticate("jwt", { session: false }),
+  (res, req) => {
+    const user = req.user;
+    const password = req.body.password;
+    const saltHash = generatePassword(password);
+    user.password = saltHash.hash;
+    user.salt = saltHash.salt;
+    user
+      .save()
+      .then((user) => {
+        const u = { ...user.toObject() };
+        delete u.password;
+        delete u.salt;
+
+        res.send({
+          message: "Success",
+          success: true,
+        });
+      })
+      .catch((error) => {
+        console.log(error);
+        res.status(500).send({
+          message: "Something went wrong. Please try again later",
+          success: false,
+        });
+      });
+  }
+);
+
+router.put(
+  "/update/profile-pic",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    
+  }
+);
 
 module.exports = router;

@@ -2,9 +2,11 @@ const axios = require("axios");
 const { Token } = require("../schema/schema");
 
 const timeout = "60000";
-const apiRequestURL = "https://api.petfinder.com/v2/oauth2/token";
-const animalsURL = "https://api.petfinder.com/v2/animals";
-const animalTypesURL = "https://api.petfinder.com/v2/types";
+const host = "https://api.petfinder.com/v2/"
+const apiRequestURL = host + "oauth2/token";
+const animalsURL = host + "animals";
+const animalTypesURL = host + "types";
+const organizationsURL = host + "organizations";
 
 async function requestToken(id, secret) {
   const data = new URLSearchParams({
@@ -24,26 +26,54 @@ async function requestToken(id, secret) {
 }
 
 async function getPets(params) {
-  const token = await Token.findOne({name: "jwt"});
+  const token = await Token.findOne({ name: "jwt" });
 
   const result = await axios.get(animalsURL, {
     timeout: timeout,
     headers: {
-      "Authorization": "Bearer " + token.token
-    }
+      Authorization: "Bearer " + token.token,
+    },
+    params: params
   });
 
   return result;
 }
 
 async function getTypes() {
-  const token = await Token.findOne({name: "jwt"});
+  const token = await Token.findOne({ name: "jwt" });
 
   const result = await axios.get(animalTypesURL, {
     timeout: timeout,
     headers: {
-      "Authorization": "Bearer " + token.token
-    }
+      Authorization: "Bearer " + token.token,
+    },
+  });
+
+  return result;
+}
+
+async function getBreed(type) {
+  const animalBreedURL = animalTypesURL + `/${type}/breeds`;
+  const token = await Token.findOne({ name: "jwt" });
+
+  const result = await axios.get(animalBreedURL, {
+    timeout: timeout,
+    headers: {
+      Authorization: "Bearer " + token.token,
+    },
+  });
+
+  return result;
+}
+
+async function getOrganizations() {
+  const token = await Token.findOne({ name: "jwt" });
+
+  const result = await axios.get(organizationsURL, {
+    timeout: timeout,
+    headers: {
+      Authorization: "Bearer " + token.token,
+    },
   });
 
   return result;
@@ -52,5 +82,7 @@ async function getTypes() {
 module.exports = {
   requestToken: requestToken,
   getPets: getPets,
-  getTypes: getTypes
+  getTypes: getTypes,
+  getBreed: getBreed,
+  getOrganizations: getOrganizations
 };

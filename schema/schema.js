@@ -1,3 +1,4 @@
+const { ObjectId } = require("mongodb");
 const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
@@ -15,17 +16,38 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
-  favorites: [
+  firstName: {
+    type: String,
+    required: true
+  },
+  lastName: {
+    type: String,
+    required: true
+  },
+  phoneNumber: {
+    type: Number,
+    required: true
+  },
+  profilePic: {
+    type: String
+  },
+  recentlyViewed: [
     {
-      type: Number,
-    },
-  ],
-  adopted: [
-    {
-      type: Number,
-    },
-  ],
+      type: Object,
+    }
+  ]
 });
+
+const favoritesSchema = new Schema({
+  favorites: [{
+    type: Object
+  }],
+  user: {
+    type: ObjectId,
+    ref: userSchema,
+    unique: true
+  }
+})
 
 const tokenSchema = new Schema({
   name: {
@@ -41,5 +63,6 @@ const tokenSchema = new Schema({
 
 module.exports = {
   User: mongoose.model("User", userSchema),
-  Token: mongoose.model("Token", tokenSchema)
+  Token: mongoose.model("Token", tokenSchema),
+  Favorites: mongoose.model("Favorites", favoritesSchema)
 };
