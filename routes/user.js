@@ -159,13 +159,13 @@ function validateChangePasswordParams(req, res, next) {
 
 async function getUserFavorites(id, res) {
   try {
-    const result = await Favorites.findOne({user: id})
+    const result = await Favorites.findOne({ user: id });
     return result ? result.animals : [];
   } catch (error) {
-    const message = "Something went wrong. Please try again later."
+    const message = "Something went wrong. Please try again later.";
     sendResponse(res, 500, message, false);
   }
-} 
+}
 
 router.post(
   "/login",
@@ -179,30 +179,30 @@ router.post(
         delete u.password;
         delete u.salt;
 
-        getUserFavorites(u._id, res).then(fav => {
+        getUserFavorites(u._id, res).then((fav) => {
           const jwt = issueJWT(u);
-          const favMap = fav.map(animal => animal.id);
-          u = {...u, favorites: favMap};
+          const favMap = fav.map((animal) => animal.id);
+          u = { ...u, favorites: favMap };
 
           res.cookie("auth", "auth", {
             maxAge: 3600000 * 24,
             httpOnly: false,
             secure: process.env.NODE_ENV !== "Development",
           });
-  
+
           res.cookie("jwt", jwt.token, {
             maxAge: 3600000 * 24,
             httpOnly: true,
             secure: process.env.NODE_ENV !== "Development",
           });
-  
+
           res.status(200).send({
             message: message,
             success: true,
             user: u,
             expiresIn: jwt.expiresIn,
           });
-        })
+        });
       })
       .catch((err) => {
         const message = "Something went wrong. Please try again later";
@@ -246,25 +246,36 @@ router.post(
         delete u.password;
         delete u.salt;
 
-        const jwt = issueJWT(u);
+        getUserFavorites(u._id, res).then((fav) => {
+          const jwt = issueJWT(u);
+          const favMap = fav.map((animal) => animal.id);
+          u = { ...u, favorites: favMap };
 
-        res.cookie("auth", "auth", {
-          maxAge: 3600000 * 24,
-          httpOnly: false,
-          secure: process.env.NODE_ENV !== "Development",
-        });
+          res.cookie("auth", "auth", {
+            maxAge: 3600000 * 24,
+            httpOnly: false,
+            secure: process.env.NODE_ENV !== "Development",
+          });
 
-        res.cookie("jwt", jwt.token, {
-          maxAge: 3600000 * 24,
-          httpOnly: true,
-          secure: process.env.NODE_ENV !== "Development",
-        });
+          res.cookie("jwt", jwt.token, {
+            maxAge: 3600000 * 24,
+            httpOnly: true,
+            secure: process.env.NODE_ENV !== "Development",
+          });
 
-        res.status(200).send({
-          message: message,
-          success: true,
-          user: u,
-          expiresIn: jwt.expiresIn,
+          res
+            .status(200)
+            .send({
+              message: message,
+              success: true,
+              user: u,
+              expiresIn: jwt.expiresIn,
+            })
+            .catch((error) => {
+              console.log(error);
+              const message = "Something went wrong. Please try again later";
+              sendResponse(res, 500, message, false);
+            });
         });
       }
     });

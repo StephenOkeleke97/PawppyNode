@@ -16,15 +16,11 @@ const sendFavoritesResponse = (res, status, message, isSuccess, favorites) => {
 };
 
 function validateRecentView(req, res, next) {
-  const recent = req.recent;
+  const animal = req.body.animal;
 
-  if (!recent || !(typeof recent === "object")) {
-    res.send({
-      message: "Invalid parameters",
-      success: false,
-    });
-  } else {
-    next();
+  if (!animal || !animal.id) {
+    sendFavoritesResponse(res, 400, "Invalid Parameters", false);
+    return;
   }
 }
 
@@ -189,31 +185,47 @@ router.get(
   (req, res) => {}
 );
 
-router.put(
-  "/v1/recent-views/add",
+router.post(
+  "/v1/recentviews",
   [validateRecentView],
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     const user = req.user;
-    const recentView = req.recent;
+    const animal = req.body.animal;
 
-    user.recentlyViewed.push(recentView);
+    if (user.recentlyViewed.length >= 10) {
+      user.recentlyViewed.shift();
+    }
 
-    user
-      .save()
-      .then(() => {
-        res.send({
-          message: "Success",
-          success: true,
-        });
-      })
-      .catch((error) => {
-        console.log(error);
-        res.status(500).send({
-          message: "Something went wrong. Please try again later.",
-          success: false,
-        });
+    user.recentlyViewed.add(animal);
+    user.save()
+    .then(res => {
+      res.send({
+        message: "Success",
+        success: true
       });
+    })
+    .catch(error => {
+      res.status(500).send({
+        message: "Something went wrong. Please try again later.",
+        success: false
+      });
+      console.log(error);
+    });
+  }
+);
+
+router.get(
+  "/v1/recentviews",
+  passport.authenticate("jwt", { session: false }),
+  (req, res) => {
+    const user = req.user;
+    
+    res.send({
+      message: "Success",
+      success: false,
+      recent: user.recentlyViewed
+    });
   }
 );
 
