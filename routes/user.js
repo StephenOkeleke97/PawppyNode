@@ -272,8 +272,12 @@ router.post(
 );
 
 router.post("/logout", (req, res) => {
-  res.clearCookie("jwt");
-  res.clearCookie("auth");
+  res.clearCookie("jwt", {
+    sameSite: "none"
+  });
+  res.clearCookie("auth", {
+    sameSite: "none"
+  });
 
   res.send({
     message: "Success",
