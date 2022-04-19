@@ -5,9 +5,16 @@ const cookieParser = require("cookie-parser");
 const passport = require("passport");
 const passportConfig = require("./config/passport");
 const routes = require("./routes/routes");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 5100;
+
+app.use(express.static(path.join(__dirname, "build")));
+
+app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "build", "index.html"));
+});
 
 passportConfig(passport);
 app.use(passport.initialize());
@@ -16,7 +23,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "https://pawppy.herokuapp.com",
+    // origin: "https://pawppy.herokuapp.com",
     credentials: true,
   })
 );
