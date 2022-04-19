@@ -188,14 +188,15 @@ router.post(
             maxAge: 3600000 * 24,
             httpOnly: false,
             secure: process.env.NODE_ENV !== "Development",
-            sameSite: "none"
+            sameSite: "none",
+            domain: "https://pawppy.herokuapp.com",
           });
 
           res.cookie("jwt", jwt.token, {
             maxAge: 3600000 * 24,
             httpOnly: true,
             secure: process.env.NODE_ENV !== "Development",
-            sameSite: "none"
+            sameSite: "none",
           });
 
           res.status(200).send({
@@ -258,14 +259,15 @@ router.post(
               maxAge: 3600000 * 24,
               httpOnly: false,
               secure: process.env.NODE_ENV !== "Development",
-              sameSite: "none"
+              sameSite: "none",
+              domain: "https://pawppy.herokuapp.com",
             });
 
             res.cookie("jwt", jwt.token, {
               maxAge: 3600000 * 24,
               httpOnly: true,
               secure: process.env.NODE_ENV !== "Development",
-              sameSite: "none"
+              sameSite: "none",
             });
 
             res.status(200).send({
