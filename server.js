@@ -17,7 +17,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: "https://pawppy.herokuapp.com",
-    // origin: "http://localhost:3000",
     credentials: true,
   })
 );

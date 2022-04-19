@@ -276,11 +276,6 @@ router.post("/logout", (req, res) => {
     sameSite: "none",
     secure: process.env.NODE_ENV !== "Development",
   });
-  res.clearCookie("auth", {
-    sameSite: "none",
-    secure: process.env.NODE_ENV !== "Development",
-  });
-
   res.send({
     message: "Success",
     success: true,
