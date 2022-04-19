@@ -16,7 +16,7 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "https://pawppy.herokuapp.com/",
+    origin: "https://pawppy.herokuapp.com",
     credentials: true,
   })
 );
