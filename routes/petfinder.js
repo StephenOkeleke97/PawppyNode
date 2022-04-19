@@ -52,7 +52,11 @@ function refreshToken(res, next) {
           const token = new Token({
             name: "jwt",
             token: result.data.access_token,
-            expires: (result.data.expires_in * 1000 + Date.now() - 240).toString(),
+            expires: (
+              result.data.expires_in * 1000 +
+              Date.now() -
+              240
+            ).toString(),
           });
           token.save((error) => {
             if (error) console.log(error);
@@ -90,7 +94,7 @@ function serverError(res) {
 }
 
 router.use(validateToken, function (req, res, next) {
-    next();
+  next();
 });
 
 router.get("/animals", function (req, res) {
@@ -112,23 +116,26 @@ router.get("/animals", function (req, res) {
     special_needs: req.query["special_needs"],
     page: req.query.page,
     limit: req.query.limit,
-    sort: req.query.sort
-    // location: req.query.location,
-    // distance: req.query.distance,
-  }
-  console.log(params);
+    sort: req.query.sort,
+  };
 
   getPets(params)
     .then((response) => {
-      console.log(response);
       res.send({
         message: "success",
         data: response.data,
       });
     })
     .catch((error) => {
-      console.log(error.response);
-      serverError(res);
+      if (
+        error.response &&
+        (error.response.status === 400 || error.response.status === 401)
+      )
+        res.status(error.response.status).send({
+          message: "Invalid search",
+          success: false,
+        });
+      else serverError(res);
     });
 });
 
@@ -143,46 +150,59 @@ router.get("/animals/:id", function (req, res) {
       });
     })
     .catch((error) => {
-      console.log(error.response);
-      serverError(res);
+      if (
+        error.response &&
+        (error.response.status === 400 || error.response.status === 401)
+      )
+        res.status(error.response.status).send({
+          message: "Invalid search",
+          success: false,
+        });
+      else serverError(res);
     });
 });
 
 router.get("/types", function (req, res) {
-  getTypes().then(response => {
-    res.send({
+  getTypes()
+    .then((response) => {
+      res.send({
         message: "success",
-        types: response.data.types
-    });
-  }).catch(error => {
+        types: response.data.types,
+      });
+    })
+    .catch((error) => {
       console.log(error);
       serverError(res);
-  });
+    });
 });
 
 router.get("/breed", function (req, res) {
-    const type = req.query.type;
-    getBreed(type).then(response => {
-        res.send({
-            message: "Success",
-            breeds: response.data.breeds
-        });
-    }).catch(error => {
-        console.log(error);
-        serverError(res);
+  const type = req.query.type;
+  getBreed(type)
+    .then((response) => {
+      res.send({
+        message: "Success",
+        breeds: response.data.breeds,
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+      serverError(res);
     });
 });
 
 router.get("/organizations", function (req, res) {
-  getOrganizations().then(response => {
-    res.send({
-      message: "Success",
-      organizations: response.data.organizations
+  getOrganizations()
+    .then((response) => {
+      res.send({
+        message: "Success",
+        organizations: response.data.organizations,
+      });
+    })
+    .catch((error) => {
+      console.log(error);
+      serverError(res);
     });
-  }).catch(error => {
-    console.log(error);
-    serverError(res);
-  });
-})
+});
 
 module.exports = router;

@@ -18,57 +18,59 @@ const userSchema = new Schema({
   },
   firstName: {
     type: String,
-    required: true
+    required: true,
   },
   lastName: {
     type: String,
-    required: true
+    required: true,
   },
   phoneNumber: {
     type: Number,
-    required: true
+    required: true,
   },
   profilePic: {
-    type: String
+    type: String,
   },
   recentlyViewed: [
     {
       type: Object,
-    }
-  ]
+    },
+  ],
 });
 
 const favoritesSchema = new Schema({
-  animals: [{
-    type: Object,
-    validate: {
-      validator: function(value) {
-        return value.length <= 10;
+  animals: [
+    {
+      type: Object,
+      validate: {
+        validator: function (value) {
+          return value.length <= 10;
+        },
+        message: "User cannot have more than 10 favorites",
       },
-      message: "User cannot have more than 10 favorites"
-    }
-  }],
+    },
+  ],
   user: {
     type: ObjectId,
     ref: "User",
-    unique: true
-  }
-})
+    unique: true,
+  },
+});
 
 const tokenSchema = new Schema({
   name: {
-    type: String
+    type: String,
   },
   token: {
-    type: String
+    type: String,
   },
   expires: {
-    type: String
-  }
+    type: String,
+  },
 });
 
 module.exports = {
   User: mongoose.model("User", userSchema),
   Token: mongoose.model("Token", tokenSchema),
-  Favorites: mongoose.model("Favorites", favoritesSchema)
+  Favorites: mongoose.model("Favorites", favoritesSchema),
 };

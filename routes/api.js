@@ -24,11 +24,11 @@ function validateRecentView(req, res, next) {
     return;
   }
 
-  const ids = user.recentlyViewed.map(animal => animal.id);
-  if (ids.some(id => id === animal.id)) {
+  const ids = user.recentlyViewed.map((animal) => animal.id);
+  if (ids.some((id) => id === animal.id)) {
     res.send({
       message: "success",
-      success: true
+      success: true,
     });
     return;
   }
@@ -90,9 +90,11 @@ router.get(
     const user = req.user;
     Favorites.findOne({ user: user._id })
       .then((favorites) => {
-        sendFavoritesResponse(res, 200, "Success", true, favorites.animals);
+        const animals = favorites ? favorites.animals : [];
+        sendFavoritesResponse(res, 200, "Success", true, animals);
       })
       .catch((error) => {
+        console.log(error);
         const message = "Something went wrong. Please try again later.";
         sendFavoritesResponse(res, 500, message, false);
       });
@@ -142,6 +144,7 @@ router.post(
         }
       })
       .catch((error) => {
+        console.log(error);
         const message = "Something went wrong. Please try again later.";
         sendFavoritesResponse(res, 500, message, false);
       });
@@ -210,20 +213,21 @@ router.post(
     }
 
     user.recentlyViewed.push(animal);
-    user.save()
-    .then(result => {
-      res.send({
-        message: "Success",
-        success: true
+    user
+      .save()
+      .then((result) => {
+        res.send({
+          message: "Success",
+          success: true,
+        });
+      })
+      .catch((error) => {
+        res.status(500).send({
+          message: "Something went wrong. Please try again later.",
+          success: false,
+        });
+        console.log(error);
       });
-    })
-    .catch(error => {
-      res.status(500).send({
-        message: "Something went wrong. Please try again later.",
-        success: false
-      });
-      console.log(error);
-    });
   }
 );
 
@@ -232,11 +236,11 @@ router.get(
   passport.authenticate("jwt", { session: false }),
   (req, res) => {
     const user = req.user;
-    
+
     res.send({
       message: "Success",
       success: false,
-      recent: user.recentlyViewed.reverse()
+      recent: user.recentlyViewed.reverse(),
     });
   }
 );

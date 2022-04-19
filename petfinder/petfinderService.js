@@ -2,7 +2,7 @@ const axios = require("axios");
 const { Token } = require("../schema/schema");
 
 const timeout = "60000";
-const host = "https://api.petfinder.com/v2/"
+const host = "https://api.petfinder.com/v2/";
 const apiRequestURL = host + "oauth2/token";
 const animalsURL = host + "animals";
 const animalTypesURL = host + "types";
@@ -33,14 +33,14 @@ async function getPets(params) {
     headers: {
       Authorization: "Bearer " + token.token,
     },
-    params: params
+    params: params,
   });
 
   return result;
 }
 
 async function getPet(id) {
-  const url = host + "animals/" + id
+  const url = host + "animals/" + id;
   const token = await Token.findOne({ name: "jwt" });
 
   const result = await axios.get(url, {
@@ -99,5 +99,5 @@ module.exports = {
   getTypes: getTypes,
   getBreed: getBreed,
   getOrganizations: getOrganizations,
-  getPet: getPet
+  getPet: getPet,
 };
