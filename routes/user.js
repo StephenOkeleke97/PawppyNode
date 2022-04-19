@@ -183,19 +183,13 @@ router.post(
           const jwt = issueJWT(u);
           const favMap = fav.map((animal) => animal.id);
           u = { ...u, favorites: favMap };
-
-          res.cookie("jwt", jwt.token, {
-            maxAge: 3600000 * 24,
-            httpOnly: true,
-            secure: process.env.NODE_ENV !== "Development",
-            sameSite: "none"
-          });
-
+          
           res.status(200).send({
             message: message,
             success: true,
             user: u,
             expiresIn: jwt.expiresIn,
+            token: jwt.token
           });
         });
       })
@@ -247,18 +241,12 @@ router.post(
             const favMap = fav.map((animal) => animal.id);
             u = { ...u, favorites: favMap };
 
-            res.cookie("jwt", jwt.token, {
-              maxAge: 3600000 * 24,
-              httpOnly: true,
-              secure: process.env.NODE_ENV !== "Development",
-              sameSite: "none"
-            });
-
             res.status(200).send({
               message: message,
               success: true,
               user: u,
               expiresIn: jwt.expiresIn,
+              token: jwt.token,
             });
           })
           .catch((error) => {

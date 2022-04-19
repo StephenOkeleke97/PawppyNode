@@ -1,21 +1,14 @@
 const dotenv = require("dotenv");
 const { User } = require("../schema/schema");
-const JWTStrategy = require("passport-jwt").Strategy;
-
+const passportJWT = require("passport-jwt");
+const JWTStrategy = passportJWT.Strategy;
+const ExtractJwt = passportJWT.ExtractJwt;
 dotenv.config();
 
 const PUB_KEY = process.env.id_rsa_pub;
 
-const cookieExtractor = (req) => {
-  var token = null;
-  if (req && req.cookies) {
-    token = req.cookies["jwt"];
-  }
-  return token;
-};
-
 const options = {
-  jwtFromRequest: cookieExtractor,
+  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: PUB_KEY,
   algorithms: ["RS256"],
 };
