@@ -1,7 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const router = express.Router();
-const { User } = require("../schema/schema");
+const { User, Favorites } = require("../schema/schema");
 const { validPassword, generatePassword, issueJWT } = require("../utils/utils");
 const passport = require("passport");
 
@@ -20,7 +20,7 @@ function validatePassword(password) {
 }
 
 function validatePhoneNumber(number) {
-  return number.trim().length >= 8;
+  return number.toString().length >= 8;
 }
 
 function requiredParamsPresent(req, res, next) {
@@ -34,6 +34,18 @@ function requiredParamsPresent(req, res, next) {
     const message =
       "The following parameters are required: Email, password, " +
       "first name, last name and phonenumber";
+    sendResponse(res, 400, message, false);
+  } else {
+    next();
+  }
+}
+
+function emailAndPasswordPresent(req, res, next) {
+  const email = req.body.email;
+  const password = req.body.password;
+
+  if (!email || !password) {
+    const message = "Email and password are required.";
     sendResponse(res, 400, message, false);
   } else {
     next();
@@ -93,7 +105,7 @@ function checkValidPassword(req, res, next) {
 }
 
 function checkValidPhonenumber(req, res, next) {
-  const phoneNumber = req.body.phoneNumber.trim();
+  const phoneNumber = req.body.phoneNumber;
 
   if (!validatePhoneNumber(phoneNumber)) {
     const message = "Phone number must be at least 8 digits long.";
@@ -117,32 +129,80 @@ function CheckIfEmailUnique(req, res, next) {
   });
 }
 
+function validateChangePasswordParams(req, res, next) {
+  const user = req.user;
+  const newPassword = req.body.newPassword;
+  const password = req.body.password;
+  if (!password || !newPassword) {
+    const message = "password and new password are required";
+    sendResponse(res, 400, message, false);
+    return;
+  }
+
+  if (!validPassword(password, user.salt, user.password)) {
+    const message = "Invalid Password";
+    sendResponse(res, 401, message, false);
+    return;
+  }
+
+  if (!validatePassword(newPassword)) {
+    const message = `Password does not meet the required standard. A password 
+    must have at least 8 characters and contain at least one 
+    upper case letter, one lower case letter, one number, 
+    and one special character`;
+    sendResponse(res, 400, message, false);
+    return;
+  }
+
+  next();
+}
+
+async function getUserFavorites(id, res) {
+  try {
+    const result = await Favorites.findOne({user: id})
+    return result ? result.animals : [];
+  } catch (error) {
+    const message = "Something went wrong. Please try again later."
+    sendResponse(res, 500, message, false);
+  }
+} 
+
 router.post(
   "/login",
-  [requiredParamsPresent, checkValidEmail, checkValidCredentials],
+  [emailAndPasswordPresent, checkValidEmail, checkValidCredentials],
   (req, res) => {
     const email = req.body.email.trim();
     User.findOne({ email: email })
       .then((user) => {
         const message = "Success";
-        const u = { ...user.toObject() };
+        let u = { ...user.toObject() };
         delete u.password;
         delete u.salt;
 
-        const jwt = issueJWT(u);
+        getUserFavorites(u._id, res).then(fav => {
+          const jwt = issueJWT(u);
+          const favMap = fav.map(animal => animal.id);
+          u = {...u, favorites: favMap};
 
-        res.cookie("jwt", jwt.token, {
-          maxAge: 3600000 * 24,
-          httpOnly: true,
-          secure: process.env.NODE_ENV !== "Development",
-        });
-
-        res.status(200).send({
-          message: message,
-          success: true,
-          user: u,
-          expiresIn: jwt.expiresIn,
-        });
+          res.cookie("auth", "auth", {
+            maxAge: 3600000 * 24,
+            httpOnly: false,
+            secure: process.env.NODE_ENV !== "Development",
+          });
+  
+          res.cookie("jwt", jwt.token, {
+            maxAge: 3600000 * 24,
+            httpOnly: true,
+            secure: process.env.NODE_ENV !== "Development",
+          });
+  
+          res.status(200).send({
+            message: message,
+            success: true,
+            user: u,
+            expiresIn: jwt.expiresIn,
+          });
+        })
       })
       .catch((err) => {
         const message = "Something went wrong. Please try again later";
@@ -188,6 +248,12 @@ router.post(
 
         const jwt = issueJWT(u);
 
+        res.cookie("auth", "auth", {
+          maxAge: 3600000 * 24,
+          httpOnly: false,
+          secure: process.env.NODE_ENV !== "Development",
+        });
+
         res.cookie("jwt", jwt.token, {
           maxAge: 3600000 * 24,
           httpOnly: true,
@@ -207,6 +273,7 @@ router.post(
 
 router.post("/logout", (req, res) => {
   res.clearCookie("jwt");
+  res.clearCookie("auth");
 
   res.send({
     message: "Success",
@@ -217,7 +284,7 @@ router.post("/logout", (req, res) => {
 router.put(
   "/update/name",
   passport.authenticate("jwt", { session: false }),
-  (res, req) => {
+  (req, res) => {
     const user = req.user;
     const firstName = req.body.firstName;
     const lastName = req.body.lastName;
@@ -226,13 +293,10 @@ router.put(
     user
       .save()
       .then((user) => {
-        const u = { ...user.toObject() };
-        delete u.password;
-        delete u.salt;
-
         res.send({
           message: "Success",
-          user: u,
+          firstName: user.firstName,
+          lastName: user.lastName,
           success: true,
         });
       })
@@ -248,21 +312,18 @@ router.put(
 
 router.put(
   "/update/phonenumber",
+  checkValidPhonenumber,
   passport.authenticate("jwt", { session: false }),
-  (res, req) => {
+  (req, res) => {
     const user = req.user;
     const phoneNumber = req.body.phoneNumber;
     user.phoneNumber = phoneNumber;
     user
       .save()
       .then((user) => {
-        const u = { ...user.toObject() };
-        delete u.password;
-        delete u.salt;
-
         res.send({
           message: "Success",
-          user: u,
+          phoneNumber: user.phoneNumber,
           success: true,
         });
       })
@@ -278,21 +339,17 @@ router.put(
 
 router.put(
   "/update/password",
-  checkValidCredentials,
   passport.authenticate("jwt", { session: false }),
-  (res, req) => {
+  [validateChangePasswordParams],
+  (req, res) => {
     const user = req.user;
-    const password = req.body.password;
-    const saltHash = generatePassword(password);
+    const newPassword = req.body.newPassword;
+    const saltHash = generatePassword(newPassword);
     user.password = saltHash.hash;
     user.salt = saltHash.salt;
     user
       .save()
       .then((user) => {
-        const u = { ...user.toObject() };
-        delete u.password;
-        delete u.salt;
-
         res.send({
           message: "Success",
           success: true,
@@ -311,9 +368,7 @@ router.put(
 router.put(
   "/update/profile-pic",
   passport.authenticate("jwt", { session: false }),
-  (req, res) => {
-    
-  }
+  (req, res) => {}
 );
 
 module.exports = router;

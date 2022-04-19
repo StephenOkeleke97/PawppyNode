@@ -39,12 +39,18 @@ const userSchema = new Schema({
 });
 
 const favoritesSchema = new Schema({
-  favorites: [{
-    type: Object
+  animals: [{
+    type: Object,
+    validate: {
+      validator: function(value) {
+        return value.length <= 10;
+      },
+      message: "User cannot have more than 10 favorites"
+    }
   }],
   user: {
     type: ObjectId,
-    ref: userSchema,
+    ref: "User",
     unique: true
   }
 })
