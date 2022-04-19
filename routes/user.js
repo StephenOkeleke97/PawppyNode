@@ -273,10 +273,12 @@ router.post(
 
 router.post("/logout", (req, res) => {
   res.clearCookie("jwt", {
-    sameSite: "none"
+    sameSite: "none",
+    secure: process.env.NODE_ENV !== "Development",
   });
   res.clearCookie("auth", {
-    sameSite: "none"
+    sameSite: "none",
+    secure: process.env.NODE_ENV !== "Development",
   });
 
   res.send({
