@@ -39,6 +39,20 @@ async function getPets(params) {
   return result;
 }
 
+async function getPet(id) {
+  const url = host + "animals/" + id
+  const token = await Token.findOne({ name: "jwt" });
+
+  const result = await axios.get(url, {
+    timeout: timeout,
+    headers: {
+      Authorization: "Bearer " + token.token,
+    },
+  });
+
+  return result;
+}
+
 async function getTypes() {
   const token = await Token.findOne({ name: "jwt" });
 
@@ -84,5 +98,6 @@ module.exports = {
   getPets: getPets,
   getTypes: getTypes,
   getBreed: getBreed,
-  getOrganizations: getOrganizations
+  getOrganizations: getOrganizations,
+  getPet: getPet
 };

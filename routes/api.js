@@ -17,11 +17,23 @@ const sendFavoritesResponse = (res, status, message, isSuccess, favorites) => {
 
 function validateRecentView(req, res, next) {
   const animal = req.body.animal;
+  const user = req.user;
 
   if (!animal || !animal.id) {
     sendFavoritesResponse(res, 400, "Invalid Parameters", false);
     return;
   }
+
+  const ids = user.recentlyViewed.map(animal => animal.id);
+  if (ids.some(id => id === animal.id)) {
+    res.send({
+      message: "success",
+      success: true
+    });
+    return;
+  }
+
+  next();
 }
 
 function validateFavorite(req, res, next) {
@@ -187,8 +199,8 @@ router.get(
 
 router.post(
   "/v1/recentviews",
-  [validateRecentView],
   passport.authenticate("jwt", { session: false }),
+  [validateRecentView],
   (req, res) => {
     const user = req.user;
     const animal = req.body.animal;
@@ -197,9 +209,9 @@ router.post(
       user.recentlyViewed.shift();
     }
 
-    user.recentlyViewed.add(animal);
+    user.recentlyViewed.push(animal);
     user.save()
-    .then(res => {
+    .then(result => {
       res.send({
         message: "Success",
         success: true
@@ -224,7 +236,7 @@ router.get(
     res.send({
       message: "Success",
       success: false,
-      recent: user.recentlyViewed
+      recent: user.recentlyViewed.reverse()
     });
   }
 );

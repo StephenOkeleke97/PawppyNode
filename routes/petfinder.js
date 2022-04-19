@@ -11,6 +11,7 @@ const {
   getTypes,
   getBreed,
   getOrganizations,
+  getPet,
 } = require("../petfinder/petfinderService");
 
 /**
@@ -110,13 +111,30 @@ router.get("/animals", function (req, res) {
     declawed: req.query["declawed"],
     special_needs: req.query["special_needs"],
     page: req.query.page,
-    limit: req.query.limit
+    limit: req.query.limit,
+    sort: req.query.sort
     // location: req.query.location,
     // distance: req.query.distance,
   }
   console.log(params);
 
   getPets(params)
+    .then((response) => {
+      console.log(response);
+      res.send({
+        message: "success",
+        data: response.data,
+      });
+    })
+    .catch((error) => {
+      console.log(error.response);
+      serverError(res);
+    });
+});
+
+router.get("/animals/:id", function (req, res) {
+  const { id } = req.params;
+  getPet(id)
     .then((response) => {
       console.log(response);
       res.send({
