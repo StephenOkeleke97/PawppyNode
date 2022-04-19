@@ -189,7 +189,7 @@ router.post(
             httpOnly: false,
             secure: process.env.NODE_ENV !== "Development",
             sameSite: "none",
-            domain: "https://pawppy.herokuapp.com",
+            domain: "pawppy.herokuapp.com",
           });
 
           res.cookie("jwt", jwt.token, {
@@ -260,7 +260,7 @@ router.post(
               httpOnly: false,
               secure: process.env.NODE_ENV !== "Development",
               sameSite: "none",
-              domain: "https://pawppy.herokuapp.com",
+              domain: "pawppy.herokuapp.com",
             });
 
             res.cookie("jwt", jwt.token, {
